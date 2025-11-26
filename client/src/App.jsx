@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard';
 import EmployeeList from './pages/EmployeeList';
 import AuditLogs from './pages/AuditLogs'; // Import New Page
 import Layout from './components/Layout';
+// 1. Import at the top
+import Settings from './pages/Settings'; 
 
 const PrivateRoute = ({ children, roleRequired }) => {
   const { token, user } = useSelector((state) => state.auth);
@@ -37,7 +39,7 @@ function App() {
             </PrivateRoute>
         } />
         
-        <Route path="settings" element={<div className="p-8 text-slate-500 font-medium">Account Settings Module (Coming Soon)</div>} />
+       <Route path="settings" element={<Settings />} />
       </Route>
       
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
