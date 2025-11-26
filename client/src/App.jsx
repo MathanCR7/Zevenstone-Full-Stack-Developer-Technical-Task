@@ -2,12 +2,21 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import EmployeeList from './pages/EmployeeList'; // Import the new component
+import EmployeeList from './pages/EmployeeList';
+import AuditLogs from './pages/AuditLogs'; // Import New Page
 import Layout from './components/Layout';
 
-const PrivateRoute = ({ children }) => {
-  const { token } = useSelector((state) => state.auth);
-  return token ? children : <Navigate to="/login" replace />;
+const PrivateRoute = ({ children, roleRequired }) => {
+  const { token, user } = useSelector((state) => state.auth);
+  
+  if (!token) return <Navigate to="/login" replace />;
+  
+  // RBAC for frontend routes
+  if (roleRequired && user?.role !== roleRequired) {
+      return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
 };
 
 function App() {
@@ -18,13 +27,16 @@ function App() {
       <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         
-        {/* Route for the Summary Dashboard */}
         <Route path="dashboard" element={<Dashboard />} />
-        
-        {/* Route for the CRUD Table */}
         <Route path="employees" element={<EmployeeList />} /> 
         
-        {/* Placeholder for settings */}
+        {/* Admin Only Route */}
+        <Route path="audit-logs" element={
+            <PrivateRoute roleRequired="admin">
+                <AuditLogs />
+            </PrivateRoute>
+        } />
+        
         <Route path="settings" element={<div className="p-8 text-slate-500 font-medium">Account Settings Module (Coming Soon)</div>} />
       </Route>
       

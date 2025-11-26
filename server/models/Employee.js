@@ -1,7 +1,6 @@
-// server/models/Employee.js
 const mongoose = require('mongoose');
 
-const employeeSchema = new mongoose.Schema({
+const EmployeeSchema = new mongoose.Schema({
   firstName: { type: String, required: [true, 'First Name is required'] },
   lastName: { type: String, required: [true, 'Last Name is required'] },
   email: { 
@@ -18,12 +17,10 @@ const employeeSchema = new mongoose.Schema({
       enum: ['active', 'inactive'], 
       default: 'active' 
   },
-  // Added fields per requirements
-  managerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  managerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // The supervisor
   dateOfJoining: { type: Date, default: Date.now },
-  profilePhotoUrl: { type: String },
   notes: { type: String },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Employee', employeeSchema);
+module.exports = mongoose.model('Employee', EmployeeSchema);

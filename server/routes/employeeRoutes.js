@@ -1,30 +1,27 @@
-// server/routes/employeeRoutes.js
 const express = require('express');
 const { 
     getEmployees, 
     createEmployee, 
-    getEmployee, 
     updateEmployee, 
-    deleteEmployee 
+    deleteEmployee,
+    getAuditLogs 
 } = require('../controllers/employeeController');
-
-// Middleware
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Apply protection to all routes
+// All routes are protected
 router.use(protect);
 
-router
-  .route('/')
+router.route('/')
   .get(getEmployees)
-  .post(createEmployee); // Supervisors can create
+  .post(createEmployee);
 
-router
-  .route('/:id')
-  .get(getEmployee)
+router.route('/:id')
   .put(updateEmployee)
-  .delete(deleteEmployee); // Supervisors can delete employees they manage
+  .delete(deleteEmployee);
+
+// Admin Only Route for Audit Logs
+router.get('/audit-logs', authorize('admin'), getAuditLogs);
 
 module.exports = router;

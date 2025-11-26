@@ -1,60 +1,71 @@
-// server/server.js
 const express = require('express');
+const dotenv = require('dotenv');
+const morgan = require('morgan');
+const colors = require('colors');
+const helmet = require('helmet');
+// const xss = require('xss-clean'); // <-- COMMENT THIS OUT (Deprecated/Causing issues)
+const rateLimit = require('express-rate-limit');
+const hpp = require('hpp');
+// const mongoSanitize = require('express-mongo-sanitize'); // <-- COMMENT THIS OUT (The cause of the crash)
 const cors = require('cors');
-const mongoose = require('mongoose');
-const logger = require('./utils/logger');
-const errorHandler = require('./middleware/errorMiddleware');
 const connectDB = require('./config/db');
+const errorHandler = require('./middleware/errorMiddleware');
 
 // Load env vars
-require('dotenv').config();
+dotenv.config();
 
 // Connect to Database
 connectDB();
 
-// Route files
-const authRoutes = require('./routes/authRoutes');
-const employeeRoutes = require('./routes/employeeRoutes');
-
 const app = express();
+
+// --- CORS Configuration ---
+app.use(cors({
+  origin: 'http://localhost:5173', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], 
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true 
+}));
 
 // Body parser
 app.use(express.json());
 
-// Enable CORS
-app.use(cors());
+// Dev logging middleware
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
 
-// Custom Request Logger Middleware
-app.use((req, res, next) => {
-  logger.info(`${req.method} request to ${req.url}`);
-  next();
+// --- Security Middleware ---
+app.use(helmet()); 
+// app.use(mongoSanitize()); // <--- DISABLED TO FIX CRASH
+// app.use(xss());           // <--- DISABLED TO FIX CRASH
+app.use(hpp()); 
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 10 * 60 * 1000, 
+  max: 100
 });
+app.use(limiter);
 
-// Mount routers
-app.use('/api/auth', authRoutes);
-app.use('/api/employees', employeeRoutes);
+// --- Routes ---
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/employees', require('./routes/employeeRoutes'));
 
 // Health Check
 app.get('/', (req, res) => res.send('API is running...'));
 
-// Global Error Handler (Must be last middleware)
+// Error Handler
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
-  logger.success(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`.yellow.bold);
 });
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
-  logger.error(`Unhandled Rejection: ${err.message}`);
-  // Close server & exit process
+  console.log(`Error: ${err.message}`.red);
   server.close(() => process.exit(1));
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-   logger.error(`Uncaught Exception: ${err.message}`);
-   process.exit(1);
 });
