@@ -1,14 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
   theme: {
-    extend: {
-      colors: {
-        primary: '#4F46E5', // Indigo 600
-        secondary: '#64748B', // Slate 500
-        background: '#F1F5F9', // Slate 100
-      }
-    },
+    extend: {},
   },
   plugins: [],
 }

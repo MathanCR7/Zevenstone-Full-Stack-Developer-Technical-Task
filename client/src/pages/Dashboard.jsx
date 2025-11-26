@@ -1,74 +1,125 @@
-import { useEffect, useState } from 'react';
-
-// Mock Data (Replace with API call)
-const mockEmployees = [
-  { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Developer', status: 'Active' },
-  { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'Designer', status: 'Inactive' },
-];
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchEmployees } from '../features/employeeSlice';
+import { FiUsers, FiUserCheck, FiUserX, FiBriefcase, FiArrowUpRight, FiClock } from 'react-icons/fi';
+import StatCard from '../components/StatCard';
 
 const Dashboard = () => {
-  const [employees] = useState(mockEmployees);
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  // Fetch employees to calculate stats, no search needed for dashboard
+  const { list = [], totalEmployees = 0 } = useSelector((state) => state.employees || {});
+
+  useEffect(() => {
+    // Only fetch if we don't have data yet
+    if (list.length === 0) {
+        dispatch(fetchEmployees({ page: 1, search: '' }));
+    }
+  }, [dispatch, list.length]);
+
+  // Derived Stats
+  const activeCount = list.filter(e => e.status === 'active').length;
+  const inactiveCount = list.filter(e => e.status === 'inactive').length;
+  // Just for demo: unique departments
+  const deptCount = [...new Set(list.map(item => item.department))].length;
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Employees</h2>
-        <button className="bg-primary text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
-          + Add Employee
-        </button>
-      </div>
-
-      {/* Desktop Table */}
-      <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 text-gray-600 uppercase text-xs font-semibold">
-            <tr>
-              <th className="p-4">Name</th>
-              <th className="p-4">Email</th>
-              <th className="p-4">Role</th>
-              <th className="p-4">Status</th>
-              <th className="p-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {employees.map((emp) => (
-              <tr key={emp.id} className="hover:bg-gray-50 transition">
-                <td className="p-4 font-medium text-gray-800">{emp.name}</td>
-                <td className="p-4 text-gray-600">{emp.email}</td>
-                <td className="p-4 text-gray-600">{emp.role}</td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 text-xs rounded-full ${emp.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {emp.status}
-                  </span>
-                </td>
-                <td className="p-4 text-right">
-                  <button className="text-indigo-600 hover:text-indigo-800 font-medium">Edit</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile Cards */}
-      <div className="md:hidden space-y-4">
-        {employees.map((emp) => (
-          <div key={emp.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <h3 className="font-bold text-gray-800">{emp.name}</h3>
-                <p className="text-sm text-gray-500">{emp.role}</p>
-              </div>
-              <span className={`px-2 py-1 text-xs rounded-full ${emp.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {emp.status}
-              </span>
-            </div>
-            <p className="text-sm text-gray-600 mb-4">{emp.email}</p>
-            <div className="flex gap-2">
-              <button className="flex-1 bg-gray-50 text-indigo-600 py-2 rounded-lg text-sm font-medium">Edit</button>
-            </div>
+    <div className="space-y-8 animate-fade-in">
+      
+      {/* Welcome Section */}
+      <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl shadow-indigo-200">
+          <div className="relative z-10">
+              <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.email?.split('@')[0]}!</h1>
+              <p className="text-indigo-100 opacity-90 max-w-xl">
+                  Here's what's happening with your team today. You have {totalEmployees} total employees managed in the system.
+              </p>
           </div>
-        ))}
+          {/* Decorative circles */}
+          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white/10 blur-3xl"></div>
+          <div className="absolute bottom-0 right-20 -mb-10 w-40 h-40 rounded-full bg-white/10 blur-2xl"></div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard title="Total Employees" value={totalEmployees} icon={<FiUsers size={24} className="text-indigo-600" />} color="bg-indigo-600" />
+        <StatCard title="Active Status" value={activeCount} icon={<FiUserCheck size={24} className="text-emerald-600" />} color="bg-emerald-600" />
+        <StatCard title="On Leave / Inactive" value={inactiveCount} icon={<FiUserX size={24} className="text-rose-600" />} color="bg-rose-600" />
+        <StatCard title="Departments" value={deptCount} icon={<FiBriefcase size={24} className="text-amber-600" />} color="bg-amber-600" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Recent Hires Table */}
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+            <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-slate-800">Recent Hires</h3>
+                <a href="/employees" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+                    View All <FiArrowUpRight />
+                </a>
+            </div>
+            
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead className="text-xs text-slate-400 uppercase font-semibold">
+                        <tr>
+                            <th className="pb-3 pl-2">Employee</th>
+                            <th className="pb-3">Role</th>
+                            <th className="pb-3">Joined Date</th>
+                            <th className="pb-3 text-right">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                        {list.slice(0, 5).map((emp) => (
+                            <tr key={emp._id} className="group">
+                                <td className="py-3 pl-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-xs">
+                                            {emp.firstName[0]}{emp.lastName[0]}
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-slate-700 text-sm">{emp.firstName} {emp.lastName}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="py-3 text-sm text-slate-600">{emp.role}</td>
+                                <td className="py-3 text-sm text-slate-500">
+                                    {new Date(emp.createdAt).toLocaleDateString()}
+                                </td>
+                                <td className="py-3 text-right">
+                                    <span className={`inline-block w-2 h-2 rounded-full ${emp.status === 'active' ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                                </td>
+                            </tr>
+                        ))}
+                        {list.length === 0 && (
+                            <tr>
+                                <td colSpan="4" className="text-center text-slate-400 py-4 text-sm">No recent data available</td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {/* Activity Feed (Mockup) */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-6">Recent Activity</h3>
+            <div className="space-y-6">
+                {[1, 2, 3].map((_, i) => (
+                    <div key={i} className="flex gap-4">
+                        <div className="flex flex-col items-center">
+                            <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400">
+                                <FiClock size={14} />
+                            </div>
+                            {i !== 2 && <div className="w-0.5 h-full bg-slate-100 my-1"></div>}
+                        </div>
+                        <div>
+                            <p className="text-sm text-slate-800 font-medium">System Audit Log</p>
+                            <p className="text-xs text-slate-500 mt-0.5">Automated backup completed successfully.</p>
+                            <span className="text-[10px] text-slate-400 font-semibold mt-1 block">2 hours ago</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
       </div>
     </div>
   );
