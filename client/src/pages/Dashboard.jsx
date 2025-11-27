@@ -10,7 +10,6 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import StatCard from '../components/StatCard';
 
-// --- Helper Function: Time Ago (No Dependency) ---
 const formatTimeAgo = (dateString) => {
     if (!dateString) return "Unknown";
     const date = new Date(dateString);
@@ -35,7 +34,6 @@ const formatTimeAgo = (dateString) => {
     return "Just now";
 };
 
-// --- Helper: Get Icon & Color based on Audit Action ---
 const getActionStyle = (action) => {
     switch (action) {
         case 'CREATE':
@@ -74,20 +72,15 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   
-  // Safe Access to Redux State
   const { list = [], recentActivity = [], isLoading } = useSelector((state) => state.employees || {});
 
   useEffect(() => {
-    // 1. Fetch Employees for Stats
     dispatch(fetchEmployees({ page: 1, search: '', limit: 1000 })); 
-    
-    // 2. Fetch LIVE Audit Logs for the Activity Widget (Admin Only)
     if(user?.role === 'admin') {
         dispatch(fetchRecentActivity());
     }
   }, [dispatch, user]);
 
-  // Derived Statistics
   const totalEmployees = list.length;
   const activeCount = list.filter(e => e.status === 'active').length;
   const inactiveCount = list.filter(e => e.status === 'inactive').length;
@@ -98,17 +91,11 @@ const Dashboard = () => {
       
       {/* 1. Hero / Welcome Section */}
       <div className="relative bg-slate-900 rounded-3xl p-6 md:p-10 overflow-hidden shadow-2xl shadow-indigo-900/20 group transition-all duration-500 hover:shadow-indigo-900/30">
-          
-          {/* Animated Background Gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-700 to-slate-900 opacity-95 group-hover:scale-105 transition-transform duration-[3s]"></div>
-          
-          {/* CSS-Only Dot Pattern (Replaces external image) */}
           <div className="absolute inset-0 opacity-20" style={{
               backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)',
               backgroundSize: '24px 24px'
           }}></div>
-
-          {/* Glow Effects */}
           <div className="absolute -top-24 -right-24 w-80 h-80 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
           <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
 
@@ -188,7 +175,7 @@ const Dashboard = () => {
             
             <div className="overflow-x-auto flex-1">
                 <table className="w-full text-left">
-                    <thead className="bg-slate-50/50 text-[11px] text-slate-400 uppercase font-bold tracking-wider border-b border-slate-100">
+                    <thead className="hidden md:table-header-group bg-slate-50/50 text-[11px] text-slate-400 uppercase font-bold tracking-wider border-b border-slate-100">
                         <tr>
                             <th className="px-6 py-3 font-bold">Employee</th>
                             <th className="px-6 py-3 font-bold">Role</th>
@@ -199,30 +186,46 @@ const Dashboard = () => {
                     <tbody className="divide-y divide-slate-50">
                         {list.length > 0 ? (
                             list.slice(0, 5).map((emp) => (
-                                <tr key={emp._id} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="relative">
-                                                <img 
-                                                    src={`https://ui-avatars.com/api/?name=${emp.firstName}+${emp.lastName}&background=random&color=fff&bold=true`}
-                                                    className="w-9 h-9 rounded-xl border border-slate-100 shadow-sm group-hover:scale-105 transition-transform"
-                                                    alt=""
-                                                />
-                                                <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white rounded-full ${emp.status === 'active' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                                <tr key={emp._id} className="block md:table-row hover:bg-slate-50/50 transition-colors group">
+                                    <td className="px-6 py-4 block md:table-cell">
+                                        <div className="flex items-center justify-between md:justify-start gap-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="relative">
+                                                    <img 
+                                                        src={`https://ui-avatars.com/api/?name=${emp.firstName}+${emp.lastName}&background=random&color=fff&bold=true`}
+                                                        className="w-9 h-9 rounded-xl border border-slate-100 shadow-sm group-hover:scale-105 transition-transform"
+                                                        alt=""
+                                                    />
+                                                    <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white rounded-full ${emp.status === 'active' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-slate-700 text-sm">{emp.firstName} {emp.lastName}</p>
+                                                    <p className="text-[11px] text-slate-400">{emp.email}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="font-bold text-slate-700 text-sm">{emp.firstName} {emp.lastName}</p>
-                                                <p className="text-[11px] text-slate-400">{emp.email}</p>
+                                            {/* Mobile Status - Visible only on mobile here to save space */}
+                                            <div className="md:hidden">
+                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+                                                    emp.status === 'active' 
+                                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                                                    : 'bg-rose-50 text-rose-600 border border-rose-100'
+                                                }`}>
+                                                    {emp.status}
+                                                </span>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm font-medium text-slate-600">{emp.role}</td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-2 md:py-4 text-sm font-medium text-slate-600 block md:table-cell pl-16 md:pl-6">
+                                        <span className="md:hidden text-xs text-slate-400 uppercase mr-2 font-bold">Role:</span>
+                                        {emp.role}
+                                    </td>
+                                    <td className="px-6 py-2 md:py-4 block md:table-cell pl-16 md:pl-6">
+                                        <span className="md:hidden text-xs text-slate-400 uppercase mr-2 font-bold">Dept:</span>
                                         <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-1 rounded-md uppercase tracking-wide">
                                             {emp.department}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-right">
+                                    <td className="hidden md:table-cell px-6 py-4 text-right">
                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
                                             emp.status === 'active' 
                                               ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 

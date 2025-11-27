@@ -1,11 +1,13 @@
+// client/src/pages/EmployeeList.jsx
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchEmployees, addEmployee, updateEmployee, deleteEmployee } from '../features/employeeSlice';
 import { 
-  FiSearch, FiEdit2, FiTrash2, FiPlus, FiChevronLeft, FiChevronRight, 
-  FiFilter, FiDownload, FiUser, FiRefreshCw, FiCheckCircle 
+  FiSearch, FiPlus, FiChevronLeft, FiChevronRight, 
+  FiFilter, FiDownload, FiUser, FiRefreshCw
 } from 'react-icons/fi';
 import EmployeeForm from '../components/EmployeeForm';
+import TableRow from '../components/TableRow'; // Importing the new component
 import debounce from 'lodash.debounce';
 
 const EmployeeList = () => {
@@ -20,14 +22,13 @@ const EmployeeList = () => {
   
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
-  const [isExporting, setIsExporting] = useState(false); // State for export loading animation
+  const [isExporting, setIsExporting] = useState(false);
 
   const debouncedSearch = debounce((val) => {
     setSearch(val);
     dispatch(fetchEmployees({ page: 1, search: val, department, status }));
   }, 500);
 
-  // Trigger fetch when Page, Search, or FILTERS change
   useEffect(() => {
     dispatch(fetchEmployees({ page: currentPage, search, department, status }));
   }, [dispatch, currentPage, department, status]);
@@ -58,39 +59,22 @@ const EmployeeList = () => {
       dispatch(fetchEmployees({ page: currentPage, search, department, status }));
   };
 
-  // --- EXPORT TO CSV FUNCTIONALITY ---
   const handleExport = () => {
     if (list.length === 0) {
       alert("No data available to export.");
       return;
     }
-
     setIsExporting(true);
-
-    // 1. Define Headers
     const headers = ["Employee ID", "First Name", "Last Name", "Email", "Role", "Department", "Status", "Date Joined"];
-    
-    // 2. Format Data Rows
     const csvRows = list.map(emp => {
       const date = new Date(emp.dateOfJoining).toLocaleDateString();
-      // Wrap in quotes to handle commas within fields safely
       return [
-        `"${emp.employeeId}"`,
-        `"${emp.firstName}"`,
-        `"${emp.lastName}"`,
-        `"${emp.email}"`,
-        `"${emp.role}"`,
-        `"${emp.department}"`,
-        `"${emp.status}"`,
-        `"${date}"`
+        `"${emp.employeeId}"`, `"${emp.firstName}"`, `"${emp.lastName}"`, `"${emp.email}"`,
+        `"${emp.role}"`, `"${emp.department}"`, `"${emp.status}"`, `"${date}"`
       ].join(",");
     });
-
-    // 3. Combine Headers and Rows
     const csvContent = [headers.join(","), ...csvRows].join("\n");
-
-    // 4. Create Blob and Download
-    setTimeout(() => { // Small timeout to show the animation
+    setTimeout(() => {
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -99,7 +83,6 @@ const EmployeeList = () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
         setIsExporting(false);
     }, 800);
   };
@@ -122,7 +105,6 @@ const EmployeeList = () => {
                 <FiRefreshCw className={isLoading ? "animate-spin" : ""} size={18} />
              </button>
              
-             {/* EXPORT BUTTON */}
              <button 
                 onClick={handleExport}
                 disabled={isExporting}
@@ -166,7 +148,6 @@ const EmployeeList = () => {
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Filters:</span>
              </div>
              
-             {/* Department Filter */}
              <select 
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
@@ -180,7 +161,6 @@ const EmployeeList = () => {
                  <option>Finance</option>
              </select>
 
-             {/* Status Filter */}
              <select 
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
@@ -194,7 +174,7 @@ const EmployeeList = () => {
       </div>
 
       {/* Table Section */}
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[600px] relative">
+      <div className="bg-transparent md:bg-white rounded-3xl md:shadow-sm md:border border-slate-200 overflow-hidden flex flex-col min-h-[600px] relative">
         {isLoading ? (
            <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
                <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
@@ -203,7 +183,7 @@ const EmployeeList = () => {
         ) : null}
 
         {list.length === 0 && !isLoading ? (
-           <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-400">
+           <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-400 bg-white rounded-3xl border border-slate-200">
                <div className="bg-slate-50 p-6 rounded-full mb-6 ring-8 ring-slate-50">
                     <FiUser size={48} className="text-slate-300" />
                </div>
@@ -220,9 +200,10 @@ const EmployeeList = () => {
            </div>
         ) : (
         <>
-        <div className="overflow-x-auto flex-1">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
+        <div className="md:overflow-x-auto flex-1">
+          {/* Note: The 'md:table' class ensures the table structure is only used on desktop */}
+          <table className="w-full text-left border-collapse block md:table">
+            <thead className="hidden md:table-header-group bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
               <tr>
                 <th className="p-5 pl-8">Employee Details</th>
                 <th className="p-5">Contact Info</th>
@@ -231,85 +212,21 @@ const EmployeeList = () => {
                 <th className="p-5 text-right pr-8">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="block md:table-row-group divide-y divide-slate-100">
               {list.map((emp) => (
-                <tr key={emp._id} className="group hover:bg-slate-50/60 transition-colors duration-200">
-                  
-                  {/* Name & Avatar */}
-                  <td className="p-5 pl-8 whitespace-nowrap">
-                    <div className="flex items-center gap-4">
-                      <div className="relative shrink-0">
-                        <img 
-                          src={`https://ui-avatars.com/api/?name=${emp.firstName}+${emp.lastName}&background=random&color=fff&bold=true`} 
-                          alt="Avatar" 
-                          className="w-11 h-11 rounded-xl object-cover shadow-sm ring-2 ring-white group-hover:ring-indigo-100 transition-all"
-                        />
-                        <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 border-2 border-white rounded-full ${emp.status === 'active' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors">
-                            {emp.firstName} {emp.lastName}
-                        </p>
-                        <p className="text-xs text-slate-400 font-mono mt-0.5 bg-slate-100 px-1.5 py-0.5 rounded w-fit">
-                            {emp.employeeId}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Email */}
-                  <td className="p-5 whitespace-nowrap">
-                    <p className="text-sm font-medium text-slate-600">{emp.email}</p>
-                  </td>
-
-                  {/* Role & Dept */}
-                  <td className="p-5 whitespace-nowrap">
-                    <p className="text-sm font-bold text-slate-700">{emp.role}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                        <p className="text-xs text-slate-500 font-medium">{emp.department}</p>
-                    </div>
-                  </td>
-
-                  {/* Status */}
-                  <td className="p-5 whitespace-nowrap">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
-                      emp.status === 'active' 
-                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
-                        : 'bg-rose-50 text-rose-600 border-rose-100'
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${emp.status === 'active' ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-                      {emp.status}
-                    </span>
-                  </td>
-
-                  {/* Actions - ALWAYS VISIBLE */}
-                  <td className="p-5 text-right pr-8 whitespace-nowrap">
-                    <div className="flex items-center justify-end gap-3">
-                      <button 
-                        onClick={() => openEditModal(emp)} 
-                        className="p-2 text-indigo-600 bg-indigo-50 border border-indigo-100 hover:bg-indigo-600 hover:text-white rounded-lg transition-all shadow-sm hover:shadow-md" 
-                        title="Edit Employee"
-                      >
-                        <FiEdit2 size={16} />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(emp._id)} 
-                        className="p-2 text-rose-600 bg-rose-50 border border-rose-100 hover:bg-rose-600 hover:text-white rounded-lg transition-all shadow-sm hover:shadow-md" 
-                        title="Delete Employee"
-                      >
-                        <FiTrash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                <TableRow 
+                  key={emp._id} 
+                  emp={emp} 
+                  onEdit={openEditModal} 
+                  onDelete={handleDelete} 
+                />
               ))}
             </tbody>
           </table>
         </div>
         
         {/* Pagination */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="p-4 md:border-t border-slate-100 md:bg-slate-50/30 flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 md:mt-0 bg-white rounded-2xl md:rounded-none border md:border-0 shadow-sm md:shadow-none">
            <span className="text-sm font-medium text-slate-500">
              Showing page <span className="font-bold text-slate-800">{currentPage}</span> of <span className="font-bold text-slate-800">{totalPages}</span>
            </span>
