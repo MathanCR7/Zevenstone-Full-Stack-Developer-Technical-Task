@@ -1,3 +1,4 @@
+// client/src/pages/Login.jsx
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
@@ -186,7 +187,7 @@ const Login = () => {
 
           {/* Footer Link */}
           <p className="text-center text-slate-500 text-sm font-medium">
-            Don't have an account? <a href="#" className="text-indigo-600 font-bold hover:underline">Contact Admin</a>
+            Don't have an account? <a href="mailto:mathansethupathy@gmail.com?subject=Account%20Request%20-%20Zevenstone&body=Hello%20Admin,%0D%0A%0D%0AI%20am%20contacting%20you%20to%20request%20an%20account%20for%20the%20Zevenstone%20Portal.%0D%0A%0D%0APlease%20let%20me%20know%20the%20next%20steps.%0D%0A%0D%0AThank%20you." className="text-indigo-600 font-bold hover:underline">Contact Admin</a>
           </p>
         </div>
       </div>

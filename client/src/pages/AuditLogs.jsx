@@ -1,3 +1,4 @@
+// client/src/pages/AuditLogs.jsx
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAuditLogs } from '../features/employeeSlice';

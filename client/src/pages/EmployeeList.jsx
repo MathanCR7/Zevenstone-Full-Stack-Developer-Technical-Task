@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchEmployees, addEmployee, updateEmployee, deleteEmployee } from '../features/employeeSlice';
 import { 
   FiSearch, FiEdit2, FiTrash2, FiPlus, FiChevronLeft, FiChevronRight, 
-  FiFilter, FiDownload, FiUser, FiRefreshCw 
+  FiFilter, FiDownload, FiUser, FiRefreshCw, FiCheckCircle 
 } from 'react-icons/fi';
 import EmployeeForm from '../components/EmployeeForm';
 import debounce from 'lodash.debounce';
@@ -14,23 +14,23 @@ const EmployeeList = () => {
   
   const [search, setSearch] = useState('');
   
-  // NEW: Filter States
+  // Filter States
   const [department, setDepartment] = useState('All Departments');
   const [status, setStatus] = useState('All Status');
   
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const [isExporting, setIsExporting] = useState(false); // State for export loading animation
 
   const debouncedSearch = debounce((val) => {
     setSearch(val);
-    // Reset to page 1 on search
     dispatch(fetchEmployees({ page: 1, search: val, department, status }));
   }, 500);
 
   // Trigger fetch when Page, Search, or FILTERS change
   useEffect(() => {
     dispatch(fetchEmployees({ page: currentPage, search, department, status }));
-  }, [dispatch, currentPage, department, status]); // Added department and status dependencies
+  }, [dispatch, currentPage, department, status]);
 
   const handleCreate = async (data) => {
     await dispatch(addEmployee(data));
@@ -58,6 +58,52 @@ const EmployeeList = () => {
       dispatch(fetchEmployees({ page: currentPage, search, department, status }));
   };
 
+  // --- EXPORT TO CSV FUNCTIONALITY ---
+  const handleExport = () => {
+    if (list.length === 0) {
+      alert("No data available to export.");
+      return;
+    }
+
+    setIsExporting(true);
+
+    // 1. Define Headers
+    const headers = ["Employee ID", "First Name", "Last Name", "Email", "Role", "Department", "Status", "Date Joined"];
+    
+    // 2. Format Data Rows
+    const csvRows = list.map(emp => {
+      const date = new Date(emp.dateOfJoining).toLocaleDateString();
+      // Wrap in quotes to handle commas within fields safely
+      return [
+        `"${emp.employeeId}"`,
+        `"${emp.firstName}"`,
+        `"${emp.lastName}"`,
+        `"${emp.email}"`,
+        `"${emp.role}"`,
+        `"${emp.department}"`,
+        `"${emp.status}"`,
+        `"${date}"`
+      ].join(",");
+    });
+
+    // 3. Combine Headers and Rows
+    const csvContent = [headers.join(","), ...csvRows].join("\n");
+
+    // 4. Create Blob and Download
+    setTimeout(() => { // Small timeout to show the animation
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `employees_export_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        setIsExporting(false);
+    }, 800);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in pb-10">
       
@@ -75,14 +121,31 @@ const EmployeeList = () => {
              >
                 <FiRefreshCw className={isLoading ? "animate-spin" : ""} size={18} />
              </button>
-             <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition shadow-sm hover:shadow-md">
-                <FiDownload size={16} /> Export CSV
+             
+             {/* EXPORT BUTTON */}
+             <button 
+                onClick={handleExport}
+                disabled={isExporting}
+                className={`flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md hover:border-indigo-200 ${isExporting ? 'cursor-not-allowed opacity-75' : 'hover:bg-slate-50'}`}
+             >
+                {isExporting ? (
+                    <>
+                        <div className="w-4 h-4 border-2 border-slate-400 border-t-indigo-600 rounded-full animate-spin"></div>
+                        <span>Exporting...</span>
+                    </>
+                ) : (
+                    <>
+                        <FiDownload size={16} className="text-indigo-600" /> 
+                        <span>Export CSV</span>
+                    </>
+                )}
             </button>
+
             <button 
                 onClick={() => { setEditingEmployee(null); setModalOpen(true); }} 
-                className="btn-primary px-5 py-2.5 text-sm shadow-indigo-200"
+                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-200 transition-all transform hover:scale-[1.02]"
             >
-                <FiPlus size={18} className="mr-2" /> Add Employee
+                <FiPlus size={18} /> Add Employee
             </button>
         </div>
       </div>
@@ -106,13 +169,8 @@ const EmployeeList = () => {
              {/* Department Filter */}
              <select 
                 value={department}
-                onChange={(e) => {
-                    setDepartment(e.target.value);
-                    // Reset to page 1 is handled by useEffect deps or logic inside slice if preferred, 
-                    // but usually setting state triggers useEffect which handles it. 
-                    // To be safe/clean UX, we often reset page in a real handler or let Redux handle.
-                }}
-                className="form-select w-full sm:w-40 py-3 bg-slate-50 border-transparent focus:bg-white cursor-pointer font-medium text-slate-600"
+                onChange={(e) => setDepartment(e.target.value)}
+                className="form-select w-full sm:w-40 py-3 bg-slate-50 border-transparent focus:bg-white cursor-pointer font-medium text-slate-600 rounded-xl outline-none"
              >
                  <option>All Departments</option>
                  <option>IT</option>
@@ -126,7 +184,7 @@ const EmployeeList = () => {
              <select 
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="form-select w-full sm:w-36 py-3 bg-slate-50 border-transparent focus:bg-white cursor-pointer font-medium text-slate-600"
+                className="form-select w-full sm:w-36 py-3 bg-slate-50 border-transparent focus:bg-white cursor-pointer font-medium text-slate-600 rounded-xl outline-none"
              >
                  <option>All Status</option>
                  <option value="active">Active</option>

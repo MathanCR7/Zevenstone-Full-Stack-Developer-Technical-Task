@@ -1,3 +1,4 @@
+// client/src/pages/SupervisorList.jsx
 import React, { useState, useEffect } from 'react';
 import { FiTrash2, FiUser, FiSearch, FiShield, FiPlus, FiLoader } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';

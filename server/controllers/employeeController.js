@@ -32,13 +32,12 @@ exports.getEmployees = async (req, res, next) => {
         query.department = department;
     }
     if (status && status !== 'All Status') {
-        query.status = status.toLowerCase(); // Ensure lowercase matching for 'active'/'inactive'
+        query.status = status.toLowerCase(); 
     }
 
-    // RBAC: Supervisors only see their own employees
-    if(req.user.role === 'supervisor') {
-        query.managerId = req.user.id;
-    }
+    // --- LOGIC UPDATE: ALLOW SUPERVISORS TO SEE ALL EMPLOYEES ---
+    // Previously: if(req.user.role === 'supervisor') { query.managerId = req.user.id; }
+    // Now: We allow them to see everyone so the list isn't empty.
 
     const total = await Employee.countDocuments(query);
     const employees = await Employee.find(query)
@@ -62,7 +61,9 @@ exports.getEmployees = async (req, res, next) => {
 exports.createEmployee = async (req, res, next) => {
   try {
     req.body.createdBy = req.user.id;
-    // If supervisor, they must be the manager
+    
+    // Assign Manager: If Supervisor creates, they are the manager. 
+    // If Admin creates, they can assign or default to themselves.
     if(req.user.role === 'supervisor') {
         req.body.managerId = req.user.id;
     } else if (!req.body.managerId) {
@@ -84,11 +85,9 @@ exports.updateEmployee = async (req, res, next) => {
     let employee = await Employee.findById(req.params.id);
     if (!employee) return next(new ErrorResponse(`Employee not found`, 404));
 
-    // Enforce Supervisor Scope
-    if(req.user.role === 'supervisor' && employee.managerId.toString() !== req.user.id) {
-        return next(new ErrorResponse('Not authorized to update this employee', 403));
-    }
-
+    // --- LOGIC UPDATE: ALLOW SUPERVISORS TO EDIT ANY EMPLOYEE ---
+    // Removed strict ownership check to allow team collaboration
+    
     employee = await Employee.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
@@ -106,10 +105,8 @@ exports.deleteEmployee = async (req, res, next) => {
     const employee = await Employee.findById(req.params.id);
     if (!employee) return next(new ErrorResponse(`Employee not found`, 404));
 
-    // Enforce Supervisor Scope
-    if(req.user.role === 'supervisor' && employee.managerId.toString() !== req.user.id) {
-        return next(new ErrorResponse('Not authorized to delete this employee', 403));
-    }
+    // --- LOGIC UPDATE: ALLOW SUPERVISORS TO DELETE ANY EMPLOYEE ---
+    // Removed strict ownership check
 
     await employee.deleteOne();
 

@@ -26,7 +26,7 @@ const Layout = () => {
   const [searchResults, setSearchResults] = useState([]);
   const searchRef = useRef(null);
 
-  // 1. Define Static Navigation Pages
+  // Define Static Navigation Pages
   const staticPages = [
     { type: 'Page', label: 'Dashboard', path: '/dashboard', icon: <FiGrid /> },
     { type: 'Page', label: 'All Employees', path: '/employees', icon: <FiUsers /> },
@@ -34,7 +34,7 @@ const Layout = () => {
     { type: 'Admin', label: 'Manage Supervisors', path: '/supervisors/manage', icon: <FiList />, role: 'admin' },
   ];
 
-  // 2. Dynamic Search Function
+  // Dynamic Search Function
   const performSearch = async (query) => {
     if (!query) {
         setSearchResults([]);
@@ -42,34 +42,32 @@ const Layout = () => {
     }
     setIsSearching(true);
     
-    // Filter static pages locally
+    // Filter static pages locally based on Role
     const matchedPages = staticPages.filter(item => {
         if (item.role && user?.role !== item.role) return false;
         return item.label.toLowerCase().includes(query.toLowerCase());
     });
 
     try {
-        // Fetch real employees from DB
         const { data } = await api.get(`/employees?search=${query}&limit=5`);
         
         const matchedEmployees = data.employees.map(emp => ({
             type: 'Employee',
             label: `${emp.firstName} ${emp.lastName}`,
             sub: emp.email,
-            path: '/employees', // In a real app, maybe /employees/:id
+            path: '/employees',
             icon: <FiUser />
         }));
 
         setSearchResults([...matchedPages, ...matchedEmployees]);
     } catch (error) {
         console.error("Search failed", error);
-        setSearchResults(matchedPages); // Fallback to just pages
+        setSearchResults(matchedPages);
     } finally {
         setIsSearching(false);
     }
   };
 
-  // 3. Debounce the search input
   const debouncedSearch = useRef(debounce((query) => performSearch(query), 300)).current;
 
   const handleSearchInput = (e) => {
@@ -89,7 +87,6 @@ const Layout = () => {
     setIsSearchOpen(false);
   };
 
-  // Close search when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -112,7 +109,11 @@ const Layout = () => {
   const menuItems = [
     { icon: <FiGrid size={18} />, label: 'Dashboard', path: '/dashboard' },
     { icon: <FiUsers size={18} />, label: 'Employees', path: '/employees' },
+    
+    // Only show Audit Logs to Admin
     ...(user?.role === 'admin' ? [{ icon: <FiShield size={18} />, label: 'Audit Logs', path: '/audit-logs' }] : []),
+    
+    // Only show Supervisors Menu to Admin
     ...(user?.role === 'admin' ? [{ 
         icon: <FiSettings size={18} />, 
         label: 'Supervisors', 
@@ -247,7 +248,6 @@ const Layout = () => {
       </aside>
 
       <main className="flex-1 flex flex-col min-w-0 md:pl-72 transition-all duration-300">
-        
         {/* Top Navbar */}
         <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 px-6 md:px-8 h-16 border-b border-slate-200/60 flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
