@@ -5,9 +5,11 @@ import api from '../services/api';
 
 export const fetchEmployees = createAsyncThunk(
   'employees/fetchAll',
-  async ({ page, search }, thunkAPI) => {
+  // Updated to accept an object with department and status
+  async ({ page, search, department = '', status = '' }, thunkAPI) => {
     try {
-      const response = await api.get(`/employees?page=${page}&search=${search}`);
+      // Pass params to URL
+      const response = await api.get(`/employees?page=${page}&search=${search}&department=${department}&status=${status}`);
       return response.data; 
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
@@ -53,7 +55,6 @@ export const deleteEmployee = createAsyncThunk(
 
 // --- AUDIT LOG ACTIONS ---
 
-// Fetch Full Audit Logs (For Audit Page)
 export const fetchAuditLogs = createAsyncThunk(
   'employees/fetchAudits',
   async (_, thunkAPI) => {
@@ -66,13 +67,11 @@ export const fetchAuditLogs = createAsyncThunk(
   }
 );
 
-// NEW: Fetch Recent Activity (For Dashboard Widget)
 export const fetchRecentActivity = createAsyncThunk(
     'employees/fetchRecentActivity',
     async (_, thunkAPI) => {
       try {
-        const response = await api.get('/employees/audit-logs'); // Reusing endpoint
-        // Slice top 5 on client side since backend hardcodes 100 for now
+        const response = await api.get('/employees/audit-logs');
         return response.data.data.slice(0, 5); 
       } catch (error) {
         return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
@@ -86,8 +85,8 @@ const employeeSlice = createSlice({
   name: 'employees',
   initialState: {
     list: [],           
-    logs: [],           // Full logs
-    recentActivity: [], // Dashboard widget logs
+    logs: [],           
+    recentActivity: [], 
     totalPages: 1,
     currentPage: 1,
     totalEmployees: 0,
@@ -124,15 +123,11 @@ const employeeSlice = createSlice({
         state.list = state.list.filter(emp => emp._id !== action.payload);
         state.totalEmployees -= 1;
       })
-
-      // Full Logs
       .addCase(fetchAuditLogs.pending, (state) => { state.isLoading = true; })
       .addCase(fetchAuditLogs.fulfilled, (state, action) => {
         state.isLoading = false;
         state.logs = action.payload; 
       })
-      
-      // Dashboard Recent Activity
       .addCase(fetchRecentActivity.fulfilled, (state, action) => {
         state.recentActivity = action.payload;
       });

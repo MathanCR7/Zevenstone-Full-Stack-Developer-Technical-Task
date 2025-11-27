@@ -7,23 +7,33 @@ const logAction = async (userId, action, target, details, ip) => {
   await AuditLog.create({ user: userId, action, targetResource: target, details, ip });
 };
 
-// @desc    Get all employees (Scoped by Role)
+// @desc    Get all employees (Scoped by Role + Filtering)
 exports.getEmployees = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
     const startIndex = (page - 1) * limit;
     const search = req.query.search || '';
+    const department = req.query.department || '';
+    const status = req.query.status || '';
 
-    // Search Query
+    // Build Query
     let query = {
       $or: [
         { firstName: { $regex: search, $options: 'i' } },
         { lastName: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
-        { department: { $regex: search, $options: 'i' } }
+        { employeeId: { $regex: search, $options: 'i' } }
       ]
     };
+
+    // Apply Filters if provided
+    if (department && department !== 'All Departments') {
+        query.department = department;
+    }
+    if (status && status !== 'All Status') {
+        query.status = status.toLowerCase(); // Ensure lowercase matching for 'active'/'inactive'
+    }
 
     // RBAC: Supervisors only see their own employees
     if(req.user.role === 'supervisor') {

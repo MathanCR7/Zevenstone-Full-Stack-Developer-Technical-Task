@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchEmployees, addEmployee, updateEmployee, deleteEmployee } from '../features/employeeSlice';
 import { 
   FiSearch, FiEdit2, FiTrash2, FiPlus, FiChevronLeft, FiChevronRight, 
-  FiFilter, FiDownload, FiUser, FiMoreHorizontal, FiRefreshCw 
+  FiFilter, FiDownload, FiUser, FiRefreshCw 
 } from 'react-icons/fi';
 import EmployeeForm from '../components/EmployeeForm';
 import debounce from 'lodash.debounce';
@@ -13,17 +13,24 @@ const EmployeeList = () => {
   const { list = [], totalPages = 1, currentPage = 1, isLoading } = useSelector((state) => state.employees || {});
   
   const [search, setSearch] = useState('');
+  
+  // NEW: Filter States
+  const [department, setDepartment] = useState('All Departments');
+  const [status, setStatus] = useState('All Status');
+  
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
 
   const debouncedSearch = debounce((val) => {
     setSearch(val);
-    dispatch(fetchEmployees({ page: 1, search: val }));
+    // Reset to page 1 on search
+    dispatch(fetchEmployees({ page: 1, search: val, department, status }));
   }, 500);
 
+  // Trigger fetch when Page, Search, or FILTERS change
   useEffect(() => {
-    dispatch(fetchEmployees({ page: currentPage, search }));
-  }, [dispatch, currentPage, search]);
+    dispatch(fetchEmployees({ page: currentPage, search, department, status }));
+  }, [dispatch, currentPage, department, status]); // Added department and status dependencies
 
   const handleCreate = async (data) => {
     await dispatch(addEmployee(data));
@@ -48,7 +55,7 @@ const EmployeeList = () => {
   };
 
   const refreshData = () => {
-      dispatch(fetchEmployees({ page: currentPage, search }));
+      dispatch(fetchEmployees({ page: currentPage, search, department, status }));
   };
 
   return (
@@ -95,16 +102,35 @@ const EmployeeList = () => {
                 <FiFilter className="text-slate-400" />
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Filters:</span>
              </div>
-             <select className="form-select w-full sm:w-40 py-3 bg-slate-50 border-transparent focus:bg-white cursor-pointer font-medium text-slate-600">
-                 <option>Department</option>
+             
+             {/* Department Filter */}
+             <select 
+                value={department}
+                onChange={(e) => {
+                    setDepartment(e.target.value);
+                    // Reset to page 1 is handled by useEffect deps or logic inside slice if preferred, 
+                    // but usually setting state triggers useEffect which handles it. 
+                    // To be safe/clean UX, we often reset page in a real handler or let Redux handle.
+                }}
+                className="form-select w-full sm:w-40 py-3 bg-slate-50 border-transparent focus:bg-white cursor-pointer font-medium text-slate-600"
+             >
+                 <option>All Departments</option>
                  <option>IT</option>
                  <option>HR</option>
                  <option>Sales</option>
+                 <option>Marketing</option>
+                 <option>Finance</option>
              </select>
-             <select className="form-select w-full sm:w-36 py-3 bg-slate-50 border-transparent focus:bg-white cursor-pointer font-medium text-slate-600">
-                 <option>Status</option>
-                 <option>Active</option>
-                 <option>Inactive</option>
+
+             {/* Status Filter */}
+             <select 
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="form-select w-full sm:w-36 py-3 bg-slate-50 border-transparent focus:bg-white cursor-pointer font-medium text-slate-600"
+             >
+                 <option>All Status</option>
+                 <option value="active">Active</option>
+                 <option value="inactive">Inactive</option>
              </select>
         </div>
       </div>
@@ -125,7 +151,7 @@ const EmployeeList = () => {
                </div>
                <p className="text-xl font-bold text-slate-700">No employees found.</p>
                <p className="text-sm text-slate-500 mt-2 max-w-xs text-center">
-                   Try adjusting your search criteria or add a new employee to get started.
+                   Try adjusting your search or filters to find what you are looking for.
                </p>
                <button 
                   onClick={() => { setEditingEmployee(null); setModalOpen(true); }}
@@ -176,7 +202,6 @@ const EmployeeList = () => {
                   {/* Email */}
                   <td className="p-5 whitespace-nowrap">
                     <p className="text-sm font-medium text-slate-600">{emp.email}</p>
-                    {emp.phone && <p className="text-xs text-slate-400 mt-0.5">{emp.phone}</p>}
                   </td>
 
                   {/* Role & Dept */}
@@ -233,14 +258,14 @@ const EmployeeList = () => {
            <div className="flex gap-2">
               <button 
                 disabled={currentPage === 1} 
-                onClick={() => dispatch(fetchEmployees({ page: currentPage - 1, search }))} 
+                onClick={() => dispatch(fetchEmployees({ page: currentPage - 1, search, department, status }))} 
                 className="px-4 py-2 border border-slate-200 rounded-xl bg-white text-slate-600 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition flex items-center gap-2 shadow-sm"
               >
                 <FiChevronLeft /> Previous
               </button>
               <button 
                 disabled={currentPage === totalPages} 
-                onClick={() => dispatch(fetchEmployees({ page: currentPage + 1, search }))} 
+                onClick={() => dispatch(fetchEmployees({ page: currentPage + 1, search, department, status }))} 
                 className="px-4 py-2 border border-slate-200 rounded-xl bg-white text-slate-600 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition flex items-center gap-2 shadow-sm"
               >
                 Next <FiChevronRight />
