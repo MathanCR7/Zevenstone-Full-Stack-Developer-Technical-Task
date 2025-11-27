@@ -19,13 +19,32 @@ connectDB();
 
 const app = express();
 
-// --- CORS Configuration ---
-app.use(cors({
-  origin: 'http://localhost:5173', 
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], 
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true 
-}));
+// --- CORS Configuration FIX ---
+// Define allowed origins using the deployed URL (from env) and localhost
+const allowedOrigins = [
+  process.env.FRONTEND_URL,          // Deployed URL: https://employee-portal-green.vercel.app
+  'http://localhost:5173',           // Local dev environment
+];
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Check if the requesting origin is in our allowed list
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            // Log the blocked origin for debugging
+            console.log(`CORS blocked request from origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], 
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true 
+};
+
+app.use(cors(corsOptions));
+// --- END CORS FIX ---
+
 
 // Body parser
 app.use(express.json());
