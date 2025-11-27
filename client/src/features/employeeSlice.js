@@ -3,7 +3,6 @@ import api from '../services/api';
 
 // --- EMPLOYEE CRUD ACTIONS ---
 
-// Fetch Employees
 export const fetchEmployees = createAsyncThunk(
   'employees/fetchAll',
   async ({ page, search }, thunkAPI) => {
@@ -16,7 +15,6 @@ export const fetchEmployees = createAsyncThunk(
   }
 );
 
-// Add Employee
 export const addEmployee = createAsyncThunk(
   'employees/add',
   async (employeeData, thunkAPI) => {
@@ -29,7 +27,6 @@ export const addEmployee = createAsyncThunk(
   }
 );
 
-// Update Employee
 export const updateEmployee = createAsyncThunk(
   'employees/update',
   async ({ id, data }, thunkAPI) => {
@@ -42,7 +39,6 @@ export const updateEmployee = createAsyncThunk(
   }
 );
 
-// Delete Employee
 export const deleteEmployee = createAsyncThunk(
   'employees/delete',
   async (id, thunkAPI) => {
@@ -55,15 +51,14 @@ export const deleteEmployee = createAsyncThunk(
   }
 );
 
-// --- NEW: AUDIT LOG ACTION ---
+// --- AUDIT LOG ACTIONS ---
 
-// Fetch Audit Logs (Admin Only)
+// Fetch Full Audit Logs (For Audit Page)
 export const fetchAuditLogs = createAsyncThunk(
   'employees/fetchAudits',
   async (_, thunkAPI) => {
     try {
       const response = await api.get('/employees/audit-logs');
-      // The backend returns { success: true, data: [...] }
       return response.data.data; 
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
@@ -71,13 +66,28 @@ export const fetchAuditLogs = createAsyncThunk(
   }
 );
 
+// NEW: Fetch Recent Activity (For Dashboard Widget)
+export const fetchRecentActivity = createAsyncThunk(
+    'employees/fetchRecentActivity',
+    async (_, thunkAPI) => {
+      try {
+        const response = await api.get('/employees/audit-logs'); // Reusing endpoint
+        // Slice top 5 on client side since backend hardcodes 100 for now
+        return response.data.data.slice(0, 5); 
+      } catch (error) {
+        return thunkAPI.rejectWithValue(error.response?.data?.message || error.message);
+      }
+    }
+  );
+
 // --- SLICE REDUCER ---
 
 const employeeSlice = createSlice({
   name: 'employees',
   initialState: {
-    list: [],           // Employee list
-    logs: [],           // Audit logs list
+    list: [],           
+    logs: [],           // Full logs
+    recentActivity: [], // Dashboard widget logs
     totalPages: 1,
     currentPage: 1,
     totalEmployees: 0,
@@ -85,7 +95,6 @@ const employeeSlice = createSlice({
     error: null,
   },
   reducers: {
-    // Optional: Add reducers to manually clear state if needed
     clearEmployeeState: (state) => {
         state.error = null;
         state.isLoading = false;
@@ -93,11 +102,7 @@ const employeeSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // --- Fetch Employees ---
-      .addCase(fetchEmployees.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
+      .addCase(fetchEmployees.pending, (state) => { state.isLoading = true; })
       .addCase(fetchEmployees.fulfilled, (state, action) => {
         state.isLoading = false;
         state.list = action.payload.employees;
@@ -105,43 +110,31 @@ const employeeSlice = createSlice({
         state.currentPage = action.payload.currentPage;
         state.totalEmployees = action.payload.totalEmployees;
       })
-      .addCase(fetchEmployees.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
+      .addCase(fetchEmployees.rejected, (state, action) => { state.isLoading = false; state.error = action.payload; })
 
-      // --- Add Employee ---
       .addCase(addEmployee.fulfilled, (state, action) => {
         state.list.unshift(action.payload);
         state.totalEmployees += 1;
       })
-
-      // --- Update Employee ---
       .addCase(updateEmployee.fulfilled, (state, action) => {
         const index = state.list.findIndex(emp => emp._id === action.payload._id);
-        if (index !== -1) {
-            state.list[index] = action.payload;
-        }
+        if (index !== -1) state.list[index] = action.payload;
       })
-
-      // --- Delete Employee ---
       .addCase(deleteEmployee.fulfilled, (state, action) => {
         state.list = state.list.filter(emp => emp._id !== action.payload);
         state.totalEmployees -= 1;
       })
 
-      // --- NEW: Audit Logs Handlers ---
-      .addCase(fetchAuditLogs.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
+      // Full Logs
+      .addCase(fetchAuditLogs.pending, (state) => { state.isLoading = true; })
       .addCase(fetchAuditLogs.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.logs = action.payload; // Populate the logs array
+        state.logs = action.payload; 
       })
-      .addCase(fetchAuditLogs.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
+      
+      // Dashboard Recent Activity
+      .addCase(fetchRecentActivity.fulfilled, (state, action) => {
+        state.recentActivity = action.payload;
       });
   },
 });

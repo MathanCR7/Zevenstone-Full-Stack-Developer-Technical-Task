@@ -3,10 +3,10 @@ import { useSelector } from 'react-redux';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import EmployeeList from './pages/EmployeeList';
-import AuditLogs from './pages/AuditLogs'; // Import New Page
+import AuditLogs from './pages/AuditLogs';
 import Layout from './components/Layout';
-// 1. Import at the top
-import Settings from './pages/Settings'; 
+import SupervisorAdd from './pages/SupervisorAdd'; // Renamed from Settings
+import SupervisorList from './pages/SupervisorList'; // New File
 
 const PrivateRoute = ({ children, roleRequired }) => {
   const { token, user } = useSelector((state) => state.auth);
@@ -32,14 +32,28 @@ function App() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="employees" element={<EmployeeList />} /> 
         
-        {/* Admin Only Route */}
+        {/* Admin Only Routes */}
         <Route path="audit-logs" element={
             <PrivateRoute roleRequired="admin">
                 <AuditLogs />
             </PrivateRoute>
         } />
         
-       <Route path="settings" element={<Settings />} />
+        {/* Supervisor Management Routes */}
+        <Route path="supervisors/add" element={
+            <PrivateRoute roleRequired="admin">
+                <SupervisorAdd />
+            </PrivateRoute>
+        } />
+
+        <Route path="supervisors/manage" element={
+            <PrivateRoute roleRequired="admin">
+                <SupervisorList />
+            </PrivateRoute>
+        } />
+        
+        {/* Redirect old settings to supervisors add for now or a general page */}
+        <Route path="settings" element={<Navigate to="/supervisors/manage" replace />} />
       </Route>
       
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

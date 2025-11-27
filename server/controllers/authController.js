@@ -1,27 +1,24 @@
 // server/controllers/authController.js
 const User = require('../models/User');
 const ErrorResponse = require('../utils/errorResponse');
-const jwt = require('jsonwebtoken'); // <--- Added missing import
+const jwt = require('jsonwebtoken');
 
 // @desc    Login user
 // @route   POST /api/auth/login
 exports.login = async (req, res, next) => {
   const { email, password } = req.body;
   
-  // Validate email & password
   if (!email || !password) {
     return next(new ErrorResponse('Please provide email and password', 400));
   }
 
   try {
-    // Check for user and include password in query
     const user = await User.findOne({ email }).select('+password');
     
     if (!user) {
       return next(new ErrorResponse('Invalid credentials', 401));
     }
 
-    // Check if password matches
     const isMatch = await user.matchPassword(password);
     
     if (!isMatch) {
@@ -34,17 +31,16 @@ exports.login = async (req, res, next) => {
   }
 };
 
-// @desc    Register user (Admin only -> Create Supervisor)
+// @desc    Register Supervisor (Admin only)
 // @route   POST /api/auth/create-supervisor
 exports.register = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Create user (Password hashing is handled by User model pre-save hook)
     const user = await User.create({
       email,
       password,
-      role: 'supervisor' // Force role to supervisor
+      role: 'supervisor'
     });
 
     res.status(201).json({ success: true, data: user });
@@ -53,7 +49,47 @@ exports.register = async (req, res, next) => {
   }
 };
 
-// Helper to sign token and send response
+// @desc    Get all Supervisors (Admin only)
+// @route   GET /api/auth/supervisors
+exports.getSupervisors = async (req, res, next) => {
+    try {
+        // Find users where role is specifically 'supervisor'
+        const supervisors = await User.find({ role: 'supervisor' }).sort({ createdAt: -1 });
+        
+        res.status(200).json({
+            success: true,
+            count: supervisors.length,
+            data: supervisors
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// @desc    Delete User (Admin only)
+// @route   DELETE /api/auth/users/:id
+exports.deleteUser = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return next(new ErrorResponse('User not found', 404));
+        }
+
+        // Prevent deleting yourself (Admin)
+        if (user._id.toString() === req.user.id) {
+            return next(new ErrorResponse('You cannot delete your own admin account', 400));
+        }
+
+        await user.deleteOne();
+
+        res.status(200).json({ success: true, data: {} });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Helper to sign token
 const sendTokenResponse = (user, statusCode, res) => {
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE

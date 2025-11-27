@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchEmployees, addEmployee, updateEmployee, deleteEmployee } from '../features/employeeSlice';
-import { FiSearch, FiEdit2, FiTrash2, FiPlus, FiChevronLeft, FiChevronRight, FiFilter, FiDownload } from 'react-icons/fi';
+import { 
+  FiSearch, FiEdit2, FiTrash2, FiPlus, FiChevronLeft, FiChevronRight, 
+  FiFilter, FiDownload, FiUser, FiMoreHorizontal, FiRefreshCw 
+} from 'react-icons/fi';
 import EmployeeForm from '../components/EmployeeForm';
 import debounce from 'lodash.debounce';
 
@@ -44,47 +47,62 @@ const EmployeeList = () => {
     setModalOpen(true);
   };
 
+  const refreshData = () => {
+      dispatch(fetchEmployees({ page: currentPage, search }));
+  };
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-10">
+      
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-           <h2 className="text-2xl font-bold text-slate-800">All Employees</h2>
-           <p className="text-slate-500 text-sm">Manage your team members and their account permissions.</p>
+           <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">All Employees</h2>
+           <p className="text-slate-500 text-sm mt-1">Manage your team members, roles, and permissions.</p>
         </div>
-        <div className="flex gap-3">
-             <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-semibold text-sm hover:bg-slate-50 transition shadow-sm">
-                <FiDownload /> Export
+        <div className="flex flex-wrap gap-3">
+             <button 
+                onClick={refreshData}
+                className="p-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 hover:text-indigo-600 transition shadow-sm"
+                title="Refresh List"
+             >
+                <FiRefreshCw className={isLoading ? "animate-spin" : ""} size={18} />
+             </button>
+             <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition shadow-sm hover:shadow-md">
+                <FiDownload size={16} /> Export CSV
             </button>
             <button 
                 onClick={() => { setEditingEmployee(null); setModalOpen(true); }} 
-                className="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm"
+                className="btn-primary px-5 py-2.5 text-sm shadow-indigo-200"
             >
-                <FiPlus size={18} /> Add Employee
+                <FiPlus size={18} className="mr-2" /> Add Employee
             </button>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4">
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] flex flex-col lg:flex-row gap-4">
         <div className="relative flex-1">
-           <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+           <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
            <input 
              onChange={(e) => debouncedSearch(e.target.value)} 
              placeholder="Search by name, email, or ID..." 
-             className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-transparent focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-slate-400" 
+             className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-transparent focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-slate-400" 
            />
         </div>
-        <div className="flex items-center gap-2">
-             <span className="text-sm font-semibold text-slate-500 hidden md:block">Filters:</span>
-             <select className="form-select w-40 py-2.5">
-                 <option>All Departments</option>
+        <div className="flex flex-wrap items-center gap-3">
+             <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
+                <FiFilter className="text-slate-400" />
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Filters:</span>
+             </div>
+             <select className="form-select w-full sm:w-40 py-3 bg-slate-50 border-transparent focus:bg-white cursor-pointer font-medium text-slate-600">
+                 <option>Department</option>
                  <option>IT</option>
                  <option>HR</option>
                  <option>Sales</option>
              </select>
-             <select className="form-select w-32 py-2.5">
-                 <option>All Status</option>
+             <select className="form-select w-full sm:w-36 py-3 bg-slate-50 border-transparent focus:bg-white cursor-pointer font-medium text-slate-600">
+                 <option>Status</option>
                  <option>Active</option>
                  <option>Inactive</option>
              </select>
@@ -92,74 +110,111 @@ const EmployeeList = () => {
       </div>
 
       {/* Table Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[500px]">
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[600px] relative">
         {isLoading ? (
-           <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-400">
-               <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-               <p>Loading employee data...</p>
+           <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
+               <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+               <p className="text-slate-500 font-medium">Updating employee records...</p>
            </div>
-        ) : list.length === 0 ? (
+        ) : null}
+
+        {list.length === 0 && !isLoading ? (
            <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-400">
-               <div className="bg-slate-50 p-6 rounded-full mb-4">
-                    <FiFilter size={32} className="text-slate-300" />
+               <div className="bg-slate-50 p-6 rounded-full mb-6 ring-8 ring-slate-50">
+                    <FiUser size={48} className="text-slate-300" />
                </div>
-               <p className="text-lg font-medium text-slate-500">No employees found.</p>
-               <p className="text-sm">Try adjusting your search criteria.</p>
+               <p className="text-xl font-bold text-slate-700">No employees found.</p>
+               <p className="text-sm text-slate-500 mt-2 max-w-xs text-center">
+                   Try adjusting your search criteria or add a new employee to get started.
+               </p>
+               <button 
+                  onClick={() => { setEditingEmployee(null); setModalOpen(true); }}
+                  className="mt-6 text-indigo-600 font-bold hover:underline"
+               >
+                   + Add New Employee
+               </button>
            </div>
         ) : (
         <>
         <div className="overflow-x-auto flex-1">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase text-xs font-bold tracking-wider">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
               <tr>
-                <th className="p-5 pl-6">Employee</th>
-                <th className="p-5">Contact</th>
-                <th className="p-5">Role & Dept</th>
+                <th className="p-5 pl-8">Employee Details</th>
+                <th className="p-5">Contact Info</th>
+                <th className="p-5">Role & Department</th>
                 <th className="p-5">Status</th>
-                <th className="p-5 text-right pr-6">Actions</th>
+                <th className="p-5 text-right pr-8">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100">
               {list.map((emp) => (
-                <tr key={emp._id} className="group hover:bg-slate-50/50 transition duration-200">
-                  <td className="p-5 pl-6">
+                <tr key={emp._id} className="group hover:bg-slate-50/60 transition-colors duration-200">
+                  
+                  {/* Name & Avatar */}
+                  <td className="p-5 pl-8 whitespace-nowrap">
                     <div className="flex items-center gap-4">
-                      <div className="relative">
+                      <div className="relative shrink-0">
                         <img 
-                          src={`https://ui-avatars.com/api/?name=${emp.firstName}+${emp.lastName}&background=random&color=fff`} 
+                          src={`https://ui-avatars.com/api/?name=${emp.firstName}+${emp.lastName}&background=random&color=fff&bold=true`} 
                           alt="Avatar" 
-                          className="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-white"
+                          className="w-11 h-11 rounded-xl object-cover shadow-sm ring-2 ring-white group-hover:ring-indigo-100 transition-all"
                         />
+                        <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 border-2 border-white rounded-full ${emp.status === 'active' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
                       </div>
                       <div>
-                        <p className="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors">{emp.firstName} {emp.lastName}</p>
-                        <p className="text-xs text-slate-400 font-mono mt-0.5">{emp.employeeId}</p>
+                        <p className="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors">
+                            {emp.firstName} {emp.lastName}
+                        </p>
+                        <p className="text-xs text-slate-400 font-mono mt-0.5 bg-slate-100 px-1.5 py-0.5 rounded w-fit">
+                            {emp.employeeId}
+                        </p>
                       </div>
                     </div>
                   </td>
-                  <td className="p-5">
-                    <p className="text-sm text-slate-600">{emp.email}</p>
+
+                  {/* Email */}
+                  <td className="p-5 whitespace-nowrap">
+                    <p className="text-sm font-medium text-slate-600">{emp.email}</p>
+                    {emp.phone && <p className="text-xs text-slate-400 mt-0.5">{emp.phone}</p>}
                   </td>
-                  <td className="p-5">
-                    <p className="text-sm font-semibold text-slate-700">{emp.role}</p>
-                    <p className="text-xs text-indigo-500 font-medium bg-indigo-50 px-2 py-0.5 rounded-md inline-block mt-1">{emp.department}</p>
+
+                  {/* Role & Dept */}
+                  <td className="p-5 whitespace-nowrap">
+                    <p className="text-sm font-bold text-slate-700">{emp.role}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                        <p className="text-xs text-slate-500 font-medium">{emp.department}</p>
+                    </div>
                   </td>
-                  <td className="p-5">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+
+                  {/* Status */}
+                  <td className="p-5 whitespace-nowrap">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
                       emp.status === 'active' 
-                        ? 'bg-emerald-100 text-emerald-800' 
-                        : 'bg-rose-100 text-rose-800'
+                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                        : 'bg-rose-50 text-rose-600 border-rose-100'
                     }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${emp.status === 'active' ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                      <span className={`w-1.5 h-1.5 rounded-full ${emp.status === 'active' ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
                       {emp.status}
                     </span>
                   </td>
-                  <td className="p-5 text-right pr-6">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => openEditModal(emp)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Edit">
+
+                  {/* Actions - ALWAYS VISIBLE */}
+                  <td className="p-5 text-right pr-8 whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-3">
+                      <button 
+                        onClick={() => openEditModal(emp)} 
+                        className="p-2 text-indigo-600 bg-indigo-50 border border-indigo-100 hover:bg-indigo-600 hover:text-white rounded-lg transition-all shadow-sm hover:shadow-md" 
+                        title="Edit Employee"
+                      >
                         <FiEdit2 size={16} />
                       </button>
-                      <button onClick={() => handleDelete(emp._id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Delete">
+                      <button 
+                        onClick={() => handleDelete(emp._id)} 
+                        className="p-2 text-rose-600 bg-rose-50 border border-rose-100 hover:bg-rose-600 hover:text-white rounded-lg transition-all shadow-sm hover:shadow-md" 
+                        title="Delete Employee"
+                      >
                         <FiTrash2 size={16} />
                       </button>
                     </div>
@@ -171,22 +226,22 @@ const EmployeeList = () => {
         </div>
         
         {/* Pagination */}
-        <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row items-center justify-between gap-4">
            <span className="text-sm font-medium text-slate-500">
-             Page <span className="text-slate-900">{currentPage}</span> of <span className="text-slate-900">{totalPages}</span>
+             Showing page <span className="font-bold text-slate-800">{currentPage}</span> of <span className="font-bold text-slate-800">{totalPages}</span>
            </span>
            <div className="flex gap-2">
               <button 
                 disabled={currentPage === 1} 
                 onClick={() => dispatch(fetchEmployees({ page: currentPage - 1, search }))} 
-                className="p-2 px-3 border border-slate-200 rounded-lg bg-white text-slate-600 text-sm font-medium disabled:opacity-50 hover:bg-slate-50 hover:text-indigo-600 transition flex items-center gap-1"
+                className="px-4 py-2 border border-slate-200 rounded-xl bg-white text-slate-600 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition flex items-center gap-2 shadow-sm"
               >
-                <FiChevronLeft /> Prev
+                <FiChevronLeft /> Previous
               </button>
               <button 
                 disabled={currentPage === totalPages} 
                 onClick={() => dispatch(fetchEmployees({ page: currentPage + 1, search }))} 
-                className="p-2 px-3 border border-slate-200 rounded-lg bg-white text-slate-600 text-sm font-medium disabled:opacity-50 hover:bg-slate-50 hover:text-indigo-600 transition flex items-center gap-1"
+                className="px-4 py-2 border border-slate-200 rounded-xl bg-white text-slate-600 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition flex items-center gap-2 shadow-sm"
               >
                 Next <FiChevronRight />
               </button>
