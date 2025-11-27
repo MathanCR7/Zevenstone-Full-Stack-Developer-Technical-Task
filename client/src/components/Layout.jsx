@@ -4,11 +4,15 @@ import { logout } from '../features/authSlice';
 import { 
   FiUsers, FiLogOut, FiMenu, FiGrid, FiSettings, FiX, 
   FiBell, FiShield, FiSearch, FiChevronRight, FiUser, 
-  FiChevronDown, FiUserPlus, FiList, FiTrash2, FiLoader 
+  FiChevronDown, FiUserPlus, FiList, FiTrash2, FiLoader,
+  FiAlertTriangle 
 } from 'react-icons/fi';
 import { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
 import debounce from 'lodash.debounce';
+
+// Define the logo path based on the public directory structure
+const LOGO_PATH = '/Logo/logo.png';
 
 const Layout = () => {
   const { user } = useSelector((state) => state.auth);
@@ -49,19 +53,21 @@ const Layout = () => {
     });
 
     try {
+        // NOTE: Assuming API endpoint supports server-side filtering/search
         const { data } = await api.get(`/employees?search=${query}&limit=5`);
         
         const matchedEmployees = data.employees.map(emp => ({
             type: 'Employee',
             label: `${emp.firstName} ${emp.lastName}`,
-            sub: emp.email,
-            path: '/employees',
+            sub: emp.employeeId, // Displaying Employee ID or email
+            path: `/employees/${emp._id}`, // Assuming a dynamic path for employee details
             icon: <FiUser />
         }));
 
         setSearchResults([...matchedPages, ...matchedEmployees]);
     } catch (error) {
         console.error("Search failed", error);
+        // Fallback to only static pages if API fails
         setSearchResults(matchedPages);
     } finally {
         setIsSearching(false);
@@ -97,15 +103,21 @@ const Layout = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Updated Logout Handler with custom confirmation dialog simulation
   const handleLogout = () => {
-    dispatch(logout());
-    navigate('/login');
+    const confirmation = window.confirm('Are you sure you want to sign out? This will end your current session.');
+    
+    if (confirmation) {
+        dispatch(logout());
+        navigate('/login');
+    }
   };
 
   const toggleSubMenu = (label) => {
     setExpandedMenu(expandedMenu === label ? null : label);
   };
 
+  // Define navigation structure based on roles
   const menuItems = [
     { icon: <FiGrid size={18} />, label: 'Dashboard', path: '/dashboard' },
     { icon: <FiUsers size={18} />, label: 'Employees', path: '/employees' },
@@ -116,11 +128,11 @@ const Layout = () => {
     // Only show Supervisors Menu to Admin
     ...(user?.role === 'admin' ? [{ 
         icon: <FiSettings size={18} />, 
-        label: 'Supervisors', 
+        label: 'Admin Tools', 
         isDropdown: true,
         subItems: [
             { label: 'Add Supervisor', path: '/supervisors/add', icon: <FiUserPlus size={16}/> },
-            { label: 'Manage / Delete', path: '/supervisors/manage', icon: <FiTrash2 size={16}/> }
+            { label: 'Manage Supervisors', path: '/supervisors/manage', icon: <FiList size={16}/> }
         ]
     }] : []),
   ];
@@ -143,27 +155,33 @@ const Layout = () => {
         }`}
       >
         <div className="h-full flex flex-col p-4">
+          
+          {/* LOGO SECTION - Updated with Image Path */}
           <div className="h-16 flex items-center px-4 mb-2">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-200">
-                Z
+              <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-lg shadow-indigo-200 p-1.5 border border-slate-100">
+                <img 
+                    src={LOGO_PATH} 
+                    alt="Zevenstone Logo" 
+                    className="w-full h-full object-contain" 
+                />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-slate-800 tracking-tight leading-none">Zevenstone</h1>
-                <p className="text-[10px] uppercase font-bold text-indigo-500 tracking-widest mt-1">Enterprise</p>
+                <h1 className="text-lg font-bold text-slate-800 tracking-tight leading-none">Employee Portal</h1>
+                <p className="text-[10px] uppercase font-bold text-indigo-500 tracking-widest mt-1">Zevenstone</p>
               </div>
             </div>
-            <button onClick={() => setSidebarOpen(false)} className="md:hidden ml-auto text-slate-400">
+            <button onClick={() => setSidebarOpen(false)} className="md:hidden ml-auto text-slate-400 p-1 hover:bg-slate-100 rounded">
               <FiX size={24} />
             </button>
           </div>
 
           <nav className="flex-1 space-y-1 overflow-y-auto mt-4 pr-2 custom-scrollbar">
-            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Platform</p>
+            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Navigation</p>
             {menuItems.map((item) => {
               if (item.isDropdown) {
                   const isExpanded = expandedMenu === item.label;
-                  const isActiveParent = item.subItems.some(sub => location.pathname === sub.path);
+                  const isActiveParent = item.subItems.some(sub => location.pathname.startsWith(sub.path));
                   
                   return (
                     <div key={item.label} className="mb-1">
@@ -183,7 +201,7 @@ const Layout = () => {
                         </div>
                         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-40 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
                             {item.subItems.map(sub => {
-                                const isSubActive = location.pathname === sub.path;
+                                const isSubActive = location.pathname.startsWith(sub.path);
                                 return (
                                     <Link 
                                         key={sub.label}
@@ -204,7 +222,7 @@ const Layout = () => {
                     </div>
                   );
               }
-              const isActive = location.pathname.startsWith(item.path);
+              const isActive = location.pathname.startsWith(item.path) && (location.pathname.length === item.path.length || location.pathname.charAt(item.path.length) === '/');
               return (
                 <Link
                   key={item.label}
@@ -226,6 +244,7 @@ const Layout = () => {
             })}
           </nav>
 
+          {/* User Profile & Logout Section (Enhanced Style) */}
           <div className="mt-auto pt-4 border-t border-slate-100">
             <div className="bg-slate-50/80 rounded-2xl p-3 border border-slate-100">
                 <div className="flex items-center gap-3 mb-3">
@@ -239,8 +258,14 @@ const Layout = () => {
                         <p className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full inline-block uppercase tracking-wide mt-0.5">{user?.role}</p>
                     </div>
                 </div>
-                <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-600 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 rounded-xl transition-all duration-200 text-xs font-bold shadow-sm">
-                   <FiLogOut /> Sign Out
+                
+                {/* ATTRACTIVE LOGOUT BUTTON */}
+                <button 
+                    onClick={handleLogout} 
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 rounded-xl transition-all duration-200 text-xs font-bold shadow-sm group"
+                >
+                   <FiLogOut className="text-sm group-hover:scale-105 transition-transform" /> 
+                   Sign Out
                 </button>
             </div>
           </div>
@@ -262,26 +287,30 @@ const Layout = () => {
                     
                     <input 
                         type="text" 
-                        placeholder="Search pages, employees, or settings..." 
+                        placeholder="Search employees, pages, or settings (⌘K)" 
                         className="bg-transparent border-none outline-none text-sm w-full placeholder:text-slate-400 font-medium text-slate-700"
                         value={searchTerm}
                         onChange={handleSearchInput}
-                        onFocus={() => { if(searchTerm) setIsSearchOpen(true); }}
+                        onFocus={() => { if(searchTerm.length > 0) setIsSearchOpen(true); }}
                     />
                     <div className="flex gap-1">
-                       <span className="text-[10px] font-bold bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-400 shadow-sm">⌘K</span>
+                       <span className="text-[10px] font-bold bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-400 shadow-sm hidden lg:block">⌘K</span>
                     </div>
                  </div>
 
                  {/* DROPDOWN RESULTS */}
-                 {isSearchOpen && (
+                 {isSearchOpen && searchTerm.length > 0 && (
                      <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden animate-slide-up z-50">
                          <div className="p-2">
                              <p className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                 {searchResults.length > 0 ? 'Best Matches' : 'No Results'}
+                                 {searchResults.length > 0 ? 'Search Results' : 'No Matches'}
                              </p>
                              
-                             {searchResults.length > 0 ? (
+                             {isSearching && searchResults.length === 0 ? (
+                                 <div className="px-3 py-4 text-center text-sm text-indigo-500 flex items-center justify-center gap-2">
+                                     <FiLoader className="animate-spin" /> Searching...
+                                 </div>
+                             ) : searchResults.length > 0 ? (
                                  searchResults.map((item, index) => (
                                      <div 
                                         key={index}
@@ -295,12 +324,12 @@ const Layout = () => {
                                              <p className="text-sm font-semibold text-slate-700 group-hover:text-indigo-700 truncate">{item.label}</p>
                                              {item.sub && <p className="text-xs text-slate-400 truncate">{item.sub}</p>}
                                          </div>
-                                         <span className="text-[10px] font-bold bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-400">{item.type}</span>
+                                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded text-white ${item.type === 'Employee' ? 'bg-indigo-500' : 'bg-slate-500'}`}>{item.type}</span>
                                      </div>
                                  ))
                              ) : (
                                  <div className="px-3 py-4 text-center text-sm text-slate-400">
-                                     {isSearching ? 'Searching...' : `No results found for "${searchTerm}"`}
+                                     <FiAlertTriangle className="inline mr-1" /> No results found for "{searchTerm}"
                                  </div>
                              )}
                          </div>
@@ -314,7 +343,7 @@ const Layout = () => {
                 <FiBell size={18} />
                 <span className="absolute top-1.5 right-2 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>
             </button>
-            <div className="h-6 w-[1px] bg-slate-200"></div>
+            <div className="h-6 w-[1px] bg-slate-200 hidden sm:block"></div>
             <div className="text-right hidden sm:block">
                 <p className="text-xs font-bold text-slate-700">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</p>
             </div>

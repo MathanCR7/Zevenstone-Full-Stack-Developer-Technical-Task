@@ -4,7 +4,10 @@ import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, clearError } from '../features/authSlice';
 import { useNavigate } from 'react-router-dom';
-import { FiMail, FiLock, FiArrowRight, FiCheckCircle, FiLoader, FiShield, FiTrendingUp, FiUsers } from 'react-icons/fi';
+import { FiMail, FiLock, FiArrowRight, FiCheckCircle, FiLoader, FiShield, FiTrendingUp, FiUsers, FiClock } from 'react-icons/fi';
+
+// Define the logo path based on the public directory structure
+const LOGO_PATH = '/Logo/logo.png';
 
 const Login = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -25,7 +28,7 @@ const Login = () => {
   return (
     <div className="min-h-screen flex w-full font-sans overflow-hidden bg-slate-50">
       
-      {/* Left Side - Brand & Artistic Area */}
+      {/* Left Side - Brand & Artistic Area (Highly Attractive & Responsive) */}
       <div className="hidden lg:flex lg:w-1/2 xl:w-7/12 relative bg-slate-900 overflow-hidden">
         {/* Background Image with Parallax feel */}
         <div className="absolute inset-0 z-0">
@@ -41,49 +44,53 @@ const Login = () => {
         {/* Content Container */}
         <div className="relative z-10 w-full h-full flex flex-col justify-between p-16 xl:p-24 text-white">
           
-          {/* Logo */}
+          {/* Logo & Portal Name */}
           <div className="flex items-center gap-3 animate-fade-in">
-             <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-lg flex items-center justify-center font-bold text-2xl border border-white/20 shadow-xl">
-                Z
+             {/* Logo Image */}
+             <div className="w-12 h-12 rounded-2xl bg-white backdrop-blur-lg flex items-center justify-center font-bold text-2xl border border-white/20 shadow-xl p-2">
+                <img 
+                    src={LOGO_PATH} 
+                    alt="Zevenstone Icon" 
+                    className="w-full h-full object-contain" 
+                />
              </div>
-             <span className="text-2xl font-bold tracking-tight text-white">Zevenstone</span>
+             <span className="text-2xl font-bold tracking-tight text-white">Zevenstone HR Portal</span>
           </div>
           
-          {/* Main Copy */}
+          {/* Main Copy - Focus on Employee Hub */}
           <div className="max-w-2xl animate-slide-up">
             <h1 className="text-5xl xl:text-6xl font-extrabold mb-8 leading-tight tracking-tight drop-shadow-lg">
-                Manage your team <br/> 
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 via-purple-200 to-indigo-200">with confidence.</span>
+                Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 via-purple-200 to-indigo-200">Employee Hub</span><br/> for seamless management.
             </h1>
             <p className="text-indigo-100/90 text-lg xl:text-xl leading-relaxed mb-12 font-light">
-                The all-in-one HR platform that streamlines processes, tracks performance, and secures your data—so you can focus on people, not paperwork.
+                This portal streamlines all your internal HR tasks, from managing employee records to tracking performance reviews. Access everything you need in one secure location.
             </p>
             
-            {/* Feature Pills */}
+            {/* Feature Pills (Adjusted for HR context) */}
             <div className="flex flex-wrap gap-4">
               <div className="feature-pill group hover:bg-white/20 transition-all cursor-default">
                   <FiShield className="text-emerald-400 text-lg group-hover:scale-110 transition-transform" /> 
-                  <span className="font-medium">Bank-grade Security</span>
+                  <span className="font-medium">Secure Access Control</span>
               </div>
               <div className="feature-pill group hover:bg-white/20 transition-all cursor-default">
-                  <FiTrendingUp className="text-emerald-400 text-lg group-hover:scale-110 transition-transform" /> 
-                  <span className="font-medium">Real-time Analytics</span>
+                  <FiClock className="text-emerald-400 text-lg group-hover:scale-110 transition-transform" /> 
+                  <span className="font-medium">Time-Off Management</span>
               </div>
               <div className="feature-pill group hover:bg-white/20 transition-all cursor-default">
                   <FiUsers className="text-emerald-400 text-lg group-hover:scale-110 transition-transform" /> 
-                  <span className="font-medium">Unlimited Users</span>
+                  <span className="font-medium">Team Directory</span>
               </div>
             </div>
           </div>
 
           {/* Footer Copyright */}
           <div className="text-sm text-indigo-200/60 font-medium">
-            © {new Date().getFullYear()} Zevenstone Inc. &nbsp;•&nbsp; Privacy Policy &nbsp;•&nbsp; Terms
+            © {new Date().getFullYear()} Zevenstone Employee Portal &nbsp;•&nbsp; All Rights Reserved
           </div>
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
+      {/* Right Side - Login Form (Responsive) */}
       <div className="w-full lg:w-1/2 xl:w-5/12 flex items-center justify-center p-6 sm:p-12 bg-white relative">
         
         {/* Decorative Ambient Blobs (Background) */}
@@ -94,14 +101,21 @@ const Login = () => {
           
           {/* Mobile Logo (Visible only on small screens) */}
           <div className="lg:hidden flex flex-col items-center mb-8">
-             <div className="w-14 h-14 rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-200 flex items-center justify-center text-white font-bold text-3xl mb-4">Z</div>
-             <h2 className="text-2xl font-bold text-slate-900">Zevenstone</h2>
+             {/* Logo Image */}
+             <div className="w-14 h-14 rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-200 flex items-center justify-center mb-4 p-2">
+                <img 
+                    src={LOGO_PATH} 
+                    alt="Zevenstone Icon" 
+                    className="w-full h-full object-contain filter brightness-150" 
+                />
+             </div>
+             <h2 className="text-2xl font-bold text-slate-900">Zevenstone HR Portal</h2>
           </div>
 
           {/* Header */}
           <div className="text-center lg:text-left">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Welcome back</h2>
-            <p className="mt-3 text-slate-500 text-lg">Enter your credentials to access the portal.</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Access Employee Portal</h2>
+            <p className="mt-3 text-slate-500 text-lg">Enter your credentials to manage records.</p>
           </div>
 
           {/* Form */}
@@ -130,10 +144,7 @@ const Login = () => {
 
               {/* Password Input */}
               <div className="group">
-                <div className="flex items-center justify-between mb-2 ml-1">
-                  <label className="text-sm font-bold text-slate-700">Password</label>
-                  <a href="#" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors">Forgot password?</a>
-                </div>
+                <label className="text-sm font-bold text-slate-700 mb-2 block ml-1">Password</label>
                 <div className="relative transition-all duration-300 transform group-focus-within:-translate-y-1">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <FiLock className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
@@ -187,7 +198,7 @@ const Login = () => {
 
           {/* Footer Link */}
           <p className="text-center text-slate-500 text-sm font-medium">
-            Don't have an account? <a href="mailto:mathansethupathy@gmail.com?subject=Account%20Request%20-%20Zevenstone&body=Hello%20Admin,%0D%0A%0D%0AI%20am%20contacting%20you%20to%20request%20an%20account%20for%20the%20Zevenstone%20Portal.%0D%0A%0D%0APlease%20let%20me%20know%20the%20next%20steps.%0D%0A%0D%0AThank%20you." className="text-indigo-600 font-bold hover:underline">Contact Admin</a>
+            Need access? <a href="mailto:mathansethupathy@gmail.com?subject=Account%20Request%20-%20Zevenstone&body=Hello%20Admin,%0D%0A%0D%0AI%20am%20contacting%20you%20to%20request%20an%20account%20for%20the%20Zevenstone%20Portal.%0D%0A%0D%0APlease%20let%20me%20know%20the%20next%20steps.%0D%0A%0D%0AThank%20you." className="text-indigo-600 font-bold hover:underline">Contact System Administrator</a>
           </p>
         </div>
       </div>
